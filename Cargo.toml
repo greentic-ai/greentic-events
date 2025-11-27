@@ -1,0 +1,38 @@
+[package]
+name = "greentic-events"
+version = "0.4.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT"
+description = "Greentic event fabric core: publish/subscribe routing, reliability, ACLs, observability, and pack-driven provider/bridge discovery."
+repository = "https://github.com/greentic-ai/greentic-events"
+readme = "README.md"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+futures = "0.3"
+greentic-telemetry = { version = "0.4", features = ["otlp"] }
+greentic-types = { version = "0.4", features = ["serde", "schemars", "time"] }
+greentic-pack = "0.4"
+packc = "0.4"
+opentelemetry = "0.31"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml_bw = "2"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "time", "sync"] }
+tokio-stream = "0.1"
+tracing = "0.1"
+clap = { version = "4", features = ["derive"] }
+
+[dev-dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "time", "sync"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+
+[[bin]]
+name = "greentic-events-cli"
+path = "src/bin/greentic-events.rs"

@@ -1,0 +1,14 @@
+packVersion: 1
+id: fake-pack
+version: "1.0.0"
+events:
+  providers:
+    - name: fake
+      kind: broker
+      component: fake-provider@1.0.0
+      capabilities:
+        transport: nats
+        reliability: at_least_once
+        ordering: per_key
+        topics:
+          - greentic.*

@@ -1,0 +1,22 @@
+packVersion: 1
+id: fake-pack-overrides
+version: "1.0.0"
+annotations:
+  events.providers.fake.retry.max_retries: 0
+  events.providers.fake.retry.base_delay_ms: 5
+  events.providers.fake.retry.max_delay_ms: 5
+  events.providers.fake.retry.strategy: fixed
+  events.providers.fake.retry.retryable_errors:
+    - transient
+  events.providers.fake.dlq_topic: custom.dlq
+events:
+  providers:
+    - name: fake
+      kind: broker
+      component: fake-provider@1.0.0
+      capabilities:
+        transport: nats
+        reliability: at_least_once
+        ordering: per_key
+        topics:
+          - topic.*
