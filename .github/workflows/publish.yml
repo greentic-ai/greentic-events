@@ -28,6 +28,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Run local checks
+        env:
+          CLI_SMOKE: 1
         run: ci/local_check.sh
       - name: Publish crates
         run: |

@@ -15,7 +15,7 @@ Multi-tenant event fabric core for Greentic. This crate wires the shared `greent
   - `events.providers.<name>.retry.strategy` (`fixed`|`exponential`|`exponential_with_jitter`)
   - `events.providers.<name>.retry.retryable_errors` (array of substrings)
 - Bridge registry for message↔event conversions.
-- Runner-agnostic: factories are injection points; no default runner client is bundled. Wire them from your host or a future `greentic-runner-client`.
+- Runner/deployer ready: factories stay runner-agnostic while plugging cleanly into the Greentic runner and deployer services (no protocol/client baked in).
 
 To plug into a runner client later, replace the in-memory factories with your client wrappers when constructing `EventBusBuilder` or the CLI (`greentic-events-cli`).
 
@@ -53,11 +53,20 @@ let mut handle = bus.subscribe("topic.*", tenant_ctx, SubscriptionOptions::defau
 if let Some(event) = handle.next().await { /* ... */ }
 ```
 
+## Default providers (OCI)
+`greentic-events-providers` is published as an OCI artifact at `oci://ghcr.io/greentic-ai/greentic-events-providers:latest`. Pull it with your OCI client (for example, `oras pull ghcr.io/greentic-ai/greentic-events-providers:latest -o /tmp/greentic-events-providers`) and point the CLI or your host at that directory:
+
+```
+oras pull ghcr.io/greentic-ai/greentic-events-providers:latest -o /tmp/greentic-events-providers
+cargo run --bin greentic-events-cli -- --pack /tmp/greentic-events-providers
+```
+- Optional helper: `./scripts/pull_providers.sh [dest_dir]` uses `oras` to fetch the pack locally for quick inspection. This lives at the scripting/CLI layer so the core crate remains transport-agnostic.
+
 ## Runner integration hooks
-See `src/runner.rs` for adapter structs you can back with the Greentic runner to construct providers or bridges from WIT components. These remain thin wrappers: you supply the invocation functions; no Wasm glue lives here.
+See `src/runner.rs` for adapter structs you can back with the Greentic runner to construct providers or bridges from WIT components. These remain thin wrappers: you supply the invocation functions; no Wasm glue lives here. Pair them with the runner/deployer services to spin up providers declared in packs. The core library does not ship a runner/deployer client or pick a transport; hosts inject their own bindings.
 
 ## Testing
-`cargo test` (Rust 1.89). Fixtures live under `tests/fixtures/packs`.
+`cargo test` (Rust 1.89). Fixtures live under `tests/fixtures/packs`. CI sets `CLI_SMOKE=1` to ensure the CLI inspector keeps working.
 
 ## CI & Publishing
 - Run `ci/local_check.sh` before pushing (fmt, clippy -D warnings, tests).

@@ -1,8 +1,6 @@
 # Runner integration
 
-This crate stays WASM-agnostic; you connect it to the Greentic runner (or any component host) via the adapters in `src/runner.rs`.
-
-> Note: There is no official greentic-runner client crate yet. The adapters here are injection points; wire them from your host once a client/API is available.
+This crate stays WASM-agnostic; you connect it to the Greentic runner (or any component host) via the adapters in `src/runner.rs`. The runner and deployer services are now available; drop their client bindings into the factories below—no protocol or client is baked into `greentic-events`.
 
 ## Wiring providers via runner
 
@@ -52,4 +50,4 @@ let bus = EventBusBuilder::new()
 cargo run --bin greentic-events-cli -- --pack path/to/pack
 ```
 
-Replace `greentic_runner_client` with your actual runner host bindings; the adapters simply require closures that return `Arc<dyn EventProvider>` or bridge instances.
+Replace `greentic_runner_client` with your actual runner host bindings; the adapters simply require closures that return `Arc<dyn EventProvider>` or bridge instances. The deployer can seed the runner with the default providers pack from `oci://ghcr.io/greentic-ai/greentic-events-providers:latest`, but that wiring lives outside this crate.
