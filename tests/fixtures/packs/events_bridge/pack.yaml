@@ -1,0 +1,14 @@
+packVersion: 1
+id: bridge-pack
+version: "1.0.0"
+events:
+  providers:
+    - name: bridge
+      kind: bridge
+      component: bridge-component@1.0.0
+      capabilities:
+        transport: webhook
+        reliability: at_most_once
+        ordering: none
+        topics:
+          - chat.*

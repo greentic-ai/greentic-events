@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -74,6 +75,48 @@ async fn loads_providers_from_pack() {
     assert_eq!(providers.len(), 1);
     assert_eq!(providers[0].name, "fake");
     assert_eq!(providers[0].transport, greentic_types::TransportKind::Nats);
+}
+
+#[tokio::test]
+async fn pack_provider_round_trip_publish_and_subscribe() {
+    let factory = FakeProviderFactory::default();
+    let builder = EventBusBuilder::new()
+        .register_from_pack_dir(&fixture_pack("events_fake"), &factory, None)
+        .await
+        .expect("load pack");
+    let bus = builder.build();
+
+    let mut handle = bus
+        .subscribe(
+            "greentic.topic",
+            tenant_ctx(),
+            SubscriptionOptions {
+                durable: false,
+                deliver_existing: false,
+                ack_mode: AckMode::Auto,
+            },
+        )
+        .await
+        .expect("subscribe");
+
+    let event = EventEnvelope {
+        id: EventId::new("evt-pack-roundtrip").unwrap(),
+        topic: "greentic.topic".into(),
+        r#type: "t".into(),
+        source: "s".into(),
+        tenant: tenant_ctx(),
+        subject: None,
+        time: Utc::now(),
+        correlation_id: None,
+        payload: json!({"ok": true}),
+        metadata: Default::default(),
+    };
+    bus.publish(event.clone()).await.unwrap();
+    let received = timeout(Duration::from_millis(200), handle.next())
+        .await
+        .expect("timeout")
+        .expect("event");
+    assert_eq!(received.id, event.id);
 }
 
 #[tokio::test]
@@ -203,6 +246,78 @@ async fn publish_sends_to_dlq_after_failures() {
         .expect("dlq event");
     assert_eq!(dlq.topic, "topic.test.dlq");
     assert!(dlq.metadata.contains_key("dlq_reason"));
+}
+
+#[tokio::test]
+async fn metrics_recorded_for_success_and_dlq() {
+    let provider = Arc::new(FakeProvider::new("metrics-ok", vec!["topic.*".into()], 0));
+    let metrics = greentic_events::metrics::EventMetrics::new();
+    let retry = RetryPolicy::default();
+    let bus = EventBusBuilder::new()
+        .with_metrics(metrics.clone())
+        .register_provider(registration_from_provider(
+            Arc::clone(&provider),
+            retry,
+            None,
+        ))
+        .build();
+
+    let event = EventEnvelope {
+        id: EventId::new("evt-metrics-ok").unwrap(),
+        topic: "topic.test".into(),
+        r#type: "t".into(),
+        source: "s".into(),
+        tenant: tenant_ctx(),
+        subject: None,
+        time: Utc::now(),
+        correlation_id: None,
+        payload: json!({}),
+        metadata: Default::default(),
+    };
+    bus.publish(event.clone()).await.unwrap();
+    assert_eq!(
+        metrics
+            .events_in_total
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    assert_eq!(
+        metrics
+            .events_out_total
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+
+    let failing = Arc::new(FakeProvider::new("metrics-fail", vec!["topic.*".into()], 5));
+    let metrics_fail = greentic_events::metrics::EventMetrics::new();
+    let bus_fail = EventBusBuilder::new()
+        .with_metrics(metrics_fail.clone())
+        .register_provider(registration_from_provider(
+            Arc::clone(&failing),
+            RetryPolicy {
+                max_retries: 0,
+                strategy: BackoffStrategy::Fixed,
+                base_delay: Duration::from_millis(1),
+                max_delay: Duration::from_millis(1),
+                retryable_errors: Vec::new(),
+            },
+            None,
+        ))
+        .build();
+    let res = bus_fail.publish(event).await;
+    assert!(res.is_err());
+    assert_eq!(
+        metrics_fail
+            .events_failed_total
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    assert_eq!(
+        metrics_fail
+            .events_dlq_total
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
 }
 
 #[tokio::test]
@@ -570,4 +685,60 @@ async fn bridge_round_trips() {
         .expect("bridge event");
     assert_eq!(outbound.len(), 1);
     assert_eq!(outbound[0].attachments.len(), 1);
+}
+
+#[tokio::test]
+async fn bridge_provider_loaded_from_pack() {
+    struct CountingBridgeFactory {
+        built: Arc<AtomicUsize>,
+    }
+
+    #[async_trait::async_trait]
+    impl greentic_events::bridge::BridgeFactory for CountingBridgeFactory {
+        async fn build_message_to_event(
+            &self,
+            _name: &str,
+        ) -> anyhow::Result<Arc<dyn greentic_events::bridge::MessageToEventBridge>> {
+            self.built.fetch_add(1, AtomicOrdering::SeqCst);
+            Ok(Arc::new(FakeMessageToEventBridge))
+        }
+
+        async fn build_event_to_message(
+            &self,
+            _name: &str,
+        ) -> anyhow::Result<Arc<dyn greentic_events::bridge::EventToMessageBridge>> {
+            self.built.fetch_add(1, AtomicOrdering::SeqCst);
+            Ok(Arc::new(FakeEventToMessageBridge))
+        }
+    }
+
+    let bridge_factory = CountingBridgeFactory {
+        built: Arc::new(AtomicUsize::new(0)),
+    };
+    let builder = EventBusBuilder::new()
+        .register_from_pack_dir(
+            &fixture_pack("events_bridge"),
+            &FakeProviderFactory::default(),
+            Some(&bridge_factory),
+        )
+        .await
+        .expect("load pack");
+    let bus = builder.build();
+    let msg = ChannelMessageEnvelope {
+        id: "m-pack".into(),
+        tenant: tenant_ctx(),
+        channel: "chat".into(),
+        session_id: "sess".into(),
+        user_id: None,
+        text: Some("hi".into()),
+        attachments: vec![],
+        metadata: Default::default(),
+    };
+    let events = bus
+        .bridges()
+        .handle_message("bridge", msg)
+        .await
+        .expect("bridge message");
+    assert_eq!(events.len(), 1);
+    assert!(bridge_factory.built.load(AtomicOrdering::SeqCst) >= 2);
 }

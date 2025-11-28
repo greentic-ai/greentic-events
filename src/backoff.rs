@@ -74,10 +74,10 @@ impl Default for RetryPolicy {
 }
 
 fn jitter(duration: Duration) -> Duration {
-    use rand::{Rng, SeedableRng};
-    let mut rng = rand::rngs::StdRng::from_entropy();
-    let nanos = duration.as_nanos();
-    let jitter = rng.gen_range(0..=nanos as u64);
+    use rand::Rng;
+    let mut rng = rand::rng();
+    let nanos = duration.as_nanos().min(u64::MAX as u128) as u64;
+    let jitter = rng.random_range(0..=nanos);
     Duration::from_nanos(jitter)
 }
 

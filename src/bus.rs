@@ -4,8 +4,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::Context;
-use greentic_pack::events::{EventProviderKind as PackEventProviderKind, EventProviderSpec};
-use greentic_types::EventProviderKind as TypesEventProviderKind;
+use greentic_pack::events::EventProviderKind as PackEventProviderKind;
 use greentic_types::{EventEnvelope, EventProviderDescriptor, TenantCtx};
 use packc::manifest::load_spec;
 use serde_json::Value;
@@ -19,7 +18,7 @@ use crate::error::{EventBusError, Result};
 use crate::idempotency::{IdempotencyStore, InMemoryIdempotencyStore};
 use crate::metrics::EventMetrics;
 use crate::pattern::matches_pattern;
-use crate::provider::{EventProviderFactory, ProviderRegistration};
+use crate::provider::{EventProviderFactory, ProviderRegistration, descriptor_from_spec};
 use crate::subscription::{SubscriptionHandle, SubscriptionOptions};
 
 /// High-level event bus coordinating provider routing, reliability, telemetry, and ACLs.
@@ -117,6 +116,11 @@ impl EventBus {
         &self.bridges
     }
 
+    /// Access event metrics counters for telemetry export or testing.
+    pub fn metrics(&self) -> &EventMetrics {
+        &self.metrics
+    }
+
     async fn publish_with_retry(
         &self,
         provider: &ProviderRegistration,
@@ -211,6 +215,11 @@ impl EventBusBuilder {
 
     pub fn with_idempotency_store(mut self, store: Arc<dyn IdempotencyStore>) -> Self {
         self.idempotency = store;
+        self
+    }
+
+    pub fn with_metrics(mut self, metrics: EventMetrics) -> Self {
+        self.metrics = metrics;
         self
     }
 
@@ -325,84 +334,6 @@ impl EventBusBuilder {
 pub struct ProviderOverrides {
     pub retry: Option<RetryPolicy>,
     pub dlq_topic: Option<String>,
-}
-
-fn descriptor_from_spec(spec: &EventProviderSpec) -> EventProviderDescriptor {
-    EventProviderDescriptor {
-        name: spec.name.clone(),
-        kind: match spec.kind {
-            PackEventProviderKind::Broker => TypesEventProviderKind::Broker,
-            PackEventProviderKind::Source => TypesEventProviderKind::Source,
-            PackEventProviderKind::Sink => TypesEventProviderKind::Sink,
-            PackEventProviderKind::Bridge => TypesEventProviderKind::Bridge,
-        },
-        transport: spec
-            .capabilities
-            .transport
-            .as_ref()
-            .map(cap_transport_to_types)
-            .unwrap_or(greentic_types::TransportKind::Other("unspecified".into())),
-        reliability: spec
-            .capabilities
-            .reliability
-            .as_ref()
-            .map(cap_reliability_to_types)
-            .unwrap_or(greentic_types::ReliabilityKind::AtMostOnce),
-        ordering: spec
-            .capabilities
-            .ordering
-            .as_ref()
-            .map(cap_ordering_to_types)
-            .unwrap_or(greentic_types::OrderingKind::None),
-        notes: None,
-        tags: vec![format!("{:?}", spec.kind)],
-    }
-}
-
-fn cap_transport_to_types(
-    value: &greentic_pack::events::TransportKind,
-) -> greentic_types::TransportKind {
-    match value {
-        greentic_pack::events::TransportKind::Nats => greentic_types::TransportKind::Nats,
-        greentic_pack::events::TransportKind::Kafka => greentic_types::TransportKind::Kafka,
-        greentic_pack::events::TransportKind::Sqs => greentic_types::TransportKind::Sqs,
-        greentic_pack::events::TransportKind::Webhook => greentic_types::TransportKind::Webhook,
-        greentic_pack::events::TransportKind::Email => greentic_types::TransportKind::Email,
-        greentic_pack::events::TransportKind::Other(v) => match v.to_ascii_lowercase().as_str() {
-            "nats" => greentic_types::TransportKind::Nats,
-            "kafka" => greentic_types::TransportKind::Kafka,
-            "sqs" => greentic_types::TransportKind::Sqs,
-            "webhook" => greentic_types::TransportKind::Webhook,
-            "email" => greentic_types::TransportKind::Email,
-            other => greentic_types::TransportKind::Other(other.to_string()),
-        },
-    }
-}
-
-fn cap_reliability_to_types(
-    value: &greentic_pack::events::ReliabilityKind,
-) -> greentic_types::ReliabilityKind {
-    match value {
-        greentic_pack::events::ReliabilityKind::AtMostOnce => {
-            greentic_types::ReliabilityKind::AtMostOnce
-        }
-        greentic_pack::events::ReliabilityKind::AtLeastOnce => {
-            greentic_types::ReliabilityKind::AtLeastOnce
-        }
-        greentic_pack::events::ReliabilityKind::EffectivelyOnce => {
-            greentic_types::ReliabilityKind::EffectivelyOnce
-        }
-    }
-}
-
-fn cap_ordering_to_types(
-    value: &greentic_pack::events::OrderingKind,
-) -> greentic_types::OrderingKind {
-    match value {
-        greentic_pack::events::OrderingKind::None => greentic_types::OrderingKind::None,
-        greentic_pack::events::OrderingKind::PerKey => greentic_types::OrderingKind::PerKey,
-        greentic_pack::events::OrderingKind::Global => greentic_types::OrderingKind::Global,
-    }
 }
 
 fn provider_overrides_from_annotations(
