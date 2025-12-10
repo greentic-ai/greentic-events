@@ -12,7 +12,7 @@ pub mod provider;
 pub mod runner;
 pub mod subscription;
 
-pub use bus::{EventBus, EventBusBuilder};
+pub use bus::{EventBus, EventBusBuilder, build_envelope};
 pub use provider::{EventProvider, EventProviderFactory, ProviderRegistration};
 pub use subscription::SubscriptionHandle;
 pub use subscription::{AckMode, SubscriptionOptions};

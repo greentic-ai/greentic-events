@@ -6,6 +6,7 @@ use std::time::Duration;
 use chrono::Utc;
 use greentic_events::acl::TopicAclRule;
 use greentic_events::backoff::{BackoffStrategy, RetryPolicy};
+use greentic_events::build_envelope;
 use greentic_events::bus::EventBusBuilder;
 use greentic_events::bus::ProviderOverrides;
 use greentic_events::error::EventBusError;
@@ -117,6 +118,92 @@ async fn pack_provider_round_trip_publish_and_subscribe() {
         .expect("timeout")
         .expect("event");
     assert_eq!(received.id, event.id);
+}
+
+#[tokio::test]
+async fn publish_event_helper_generates_envelope() {
+    let provider = Arc::new(FakeProvider::new(
+        "helper",
+        vec!["greentic.repo.*".into()],
+        0,
+    ));
+    let bus = EventBusBuilder::new()
+        .register_provider(registration_from_provider(
+            Arc::clone(&provider),
+            RetryPolicy::default(),
+            None,
+        ))
+        .build();
+
+    let tenant = tenant_ctx();
+    bus.publish_event(
+        &tenant,
+        "greentic.repo.build.status",
+        json!({"status": "ok"}),
+    )
+    .await
+    .expect("publish ok");
+
+    let published = provider.published();
+    let published = published.lock().unwrap();
+    assert_eq!(published.len(), 1);
+    let evt = &published[0];
+    assert_eq!(evt.topic, "greentic.repo.build.status");
+    assert_eq!(evt.r#type, "greentic.events.generic");
+    assert_eq!(evt.source, "greentic-events");
+    assert_eq!(evt.tenant, tenant);
+    assert!(evt.id.as_str().starts_with("evt-"));
+}
+
+#[tokio::test]
+async fn subscribe_topic_helper_clones_tenant() {
+    let provider = Arc::new(FakeProvider::new("sub-helper", vec!["topic.*".into()], 0));
+    let bus = EventBusBuilder::new()
+        .register_provider(registration_from_provider(
+            Arc::clone(&provider),
+            RetryPolicy::default(),
+            None,
+        ))
+        .build();
+
+    let tenant = tenant_ctx();
+    let mut handle = bus
+        .subscribe_topic(
+            "topic.test",
+            &tenant,
+            SubscriptionOptions {
+                durable: false,
+                deliver_existing: true,
+                ack_mode: AckMode::Auto,
+            },
+        )
+        .await
+        .expect("subscribe");
+
+    let event = build_envelope(tenant.clone(), "topic.test", json!({"ok": true})).unwrap();
+    bus.publish(event.clone()).await.unwrap();
+
+    let received = timeout(Duration::from_secs(1), handle.next())
+        .await
+        .expect("recv timeout")
+        .expect("event");
+    assert_eq!(received.id, event.id);
+    assert_eq!(received.tenant, tenant);
+}
+
+#[test]
+fn build_envelope_is_generic_and_string_topic_only() {
+    let envelope = build_envelope(
+        tenant_ctx(),
+        "greentic.repo.component.deprecated",
+        json!({"component": "svc", "reason": "deprecated"}),
+    )
+    .expect("envelope");
+    assert_eq!(envelope.topic, "greentic.repo.component.deprecated");
+    assert_eq!(envelope.r#type, "greentic.events.generic");
+    assert_eq!(envelope.source, "greentic-events");
+    assert!(envelope.correlation_id.is_none());
+    assert!(envelope.metadata.is_empty());
 }
 
 #[tokio::test]

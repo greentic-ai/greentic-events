@@ -1,6 +1,6 @@
 [package]
 name = "greentic-events"
-version = "0.4.1"
+version = "0.4.3"
 edition = "2024"
 rust-version = "1.89"
 license = "MIT"
@@ -15,7 +15,6 @@ futures = "0.3"
 greentic-telemetry = { version = "0.4", features = ["otlp"] }
 greentic-types = { version = "0.4", features = ["serde", "schemars", "time"] }
 greentic-pack = "0.4"
-packc = "0.4"
 opentelemetry = "0.31"
 rand = "0.9"
 serde = { version = "1", features = ["derive"] }

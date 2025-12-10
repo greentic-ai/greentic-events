@@ -1,12 +1,17 @@
 use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::Context;
+use chrono::Utc;
 use greentic_pack::events::EventProviderKind as PackEventProviderKind;
-use greentic_types::{EventEnvelope, EventProviderDescriptor, TenantCtx};
-use packc::manifest::load_spec;
+use greentic_pack::events::EventsSection;
+use greentic_types::{EventEnvelope, EventId, EventProviderDescriptor, TenantCtx};
+use rand::Rng;
+use rand::distr::Alphanumeric;
+use serde::Deserialize;
 use serde_json::Value;
 use tokio::time::sleep;
 use tracing::{Instrument, info_span};
@@ -20,6 +25,29 @@ use crate::metrics::EventMetrics;
 use crate::pattern::matches_pattern;
 use crate::provider::{EventProviderFactory, ProviderRegistration, descriptor_from_spec};
 use crate::subscription::{SubscriptionHandle, SubscriptionOptions};
+
+#[derive(Debug, Deserialize)]
+struct PackSpec {
+    #[serde(rename = "packVersion", default = "default_pack_version")]
+    pack_version: u32,
+    id: String,
+    version: String,
+    #[serde(default)]
+    annotations: serde_json::Map<String, Value>,
+    #[serde(default)]
+    events: Option<EventsSection>,
+}
+
+#[derive(Debug)]
+struct SpecBundle {
+    spec: PackSpec,
+    #[allow(dead_code)]
+    source: std::path::PathBuf,
+}
+
+fn default_pack_version() -> u32 {
+    1
+}
 
 /// High-level event bus coordinating provider routing, reliability, telemetry, and ACLs.
 pub struct EventBus {
@@ -80,6 +108,17 @@ impl EventBus {
         .await
     }
 
+    /// Convenience helper to publish a JSON payload with a generated envelope.
+    pub async fn publish_event(
+        &self,
+        tenant: &TenantCtx,
+        topic: &str,
+        payload: Value,
+    ) -> Result<()> {
+        let envelope = build_envelope(tenant.clone(), topic, payload)?;
+        self.publish(envelope).await
+    }
+
     /// Subscribe to a topic using the provider mapped to that topic.
     pub async fn subscribe(
         &self,
@@ -101,6 +140,16 @@ impl EventBus {
             .instrument(span)
             .await
             .map_err(EventBusError::Other)
+    }
+
+    /// Convenience helper to subscribe with a borrowed tenant context.
+    pub async fn subscribe_topic(
+        &self,
+        topic: &str,
+        tenant: &TenantCtx,
+        options: SubscriptionOptions,
+    ) -> Result<SubscriptionHandle> {
+        self.subscribe(topic, tenant.clone(), options).await
     }
 
     /// Returns registered provider descriptors for introspection.
@@ -336,6 +385,55 @@ pub struct ProviderOverrides {
     pub dlq_topic: Option<String>,
 }
 
+fn load_spec(pack_dir: &Path) -> anyhow::Result<SpecBundle> {
+    let manifest_path = pack_dir.join("pack.yaml");
+    let contents = fs::read_to_string(&manifest_path)
+        .with_context(|| format!("failed to read {}", manifest_path.display()))?;
+    let spec: PackSpec = serde_yaml_bw::from_str(&contents)
+        .with_context(|| format!("{} is not a valid PackSpec", manifest_path.display()))?;
+    validate_spec(&spec)?;
+    if let Some(events) = &spec.events {
+        events.validate()?;
+    }
+    Ok(SpecBundle {
+        spec,
+        source: manifest_path,
+    })
+}
+
+fn validate_spec(spec: &PackSpec) -> anyhow::Result<()> {
+    if spec.pack_version != 1 {
+        anyhow::bail!("unsupported packVersion {}; expected 1", spec.pack_version);
+    }
+    if spec.id.trim().is_empty() {
+        anyhow::bail!("pack id must not be empty");
+    }
+    if spec.version.trim().is_empty() {
+        anyhow::bail!("pack version must not be empty");
+    }
+    Ok(())
+}
+
+/// Build a generic event envelope with a generated ID and default metadata.
+pub fn build_envelope(
+    tenant: TenantCtx,
+    topic: impl Into<String>,
+    payload: Value,
+) -> Result<EventEnvelope> {
+    Ok(EventEnvelope {
+        id: generate_event_id()?,
+        topic: topic.into(),
+        r#type: "greentic.events.generic".into(),
+        source: "greentic-events".into(),
+        tenant,
+        subject: None,
+        time: Utc::now(),
+        correlation_id: None,
+        payload,
+        metadata: Default::default(),
+    })
+}
+
 fn provider_overrides_from_annotations(
     name: &str,
     annotations: &serde_json::Map<String, Value>,
@@ -404,4 +502,15 @@ fn provider_overrides_from_annotations(
     } else {
         None
     }
+}
+
+fn generate_event_id() -> Result<EventId> {
+    let rng = rand::rng();
+    let suffix: String = rng
+        .sample_iter(Alphanumeric)
+        .take(12)
+        .map(char::from)
+        .collect();
+    let id = format!("evt-{}", suffix.to_lowercase());
+    EventId::new(id).map_err(|err| EventBusError::Other(err.into()))
 }

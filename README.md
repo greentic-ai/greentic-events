@@ -37,6 +37,9 @@ Optional overrides can be set in `pack.yaml` annotations:
 ```rust
 use greentic_events::{EventBusBuilder, SubscriptionOptions};
 use greentic_events::provider::EventProviderFactory;
+use futures::StreamExt;
+use serde_json::json;
+use greentic_types::TenantCtx;
 
 // Implement EventProviderFactory (or use runner-backed factories) and register from a pack:
 let factory = MyProviderFactory::new();
@@ -52,6 +55,43 @@ bus.publish(event_envelope).await?;
 let mut handle = bus.subscribe("topic.*", tenant_ctx, SubscriptionOptions::default()).await?;
 if let Some(event) = handle.next().await { /* ... */ }
 ```
+
+### Minimal publish/subscribe API (domain-agnostic)
+If you just need a generic JSON payload on a string topic, use the helper that builds the envelope for you:
+```rust
+use greentic_events::{EventBusBuilder, SubscriptionOptions};
+use greentic_events::provider::EventProviderFactory;
+use serde_json::json;
+use greentic_types::TenantCtx;
+
+let tenant = TenantCtx::new("dev".try_into()?, "tenant-a".try_into()?);
+let bus = EventBusBuilder::new()
+    // register providers directly or via `register_from_pack_dir(...)`
+    .register_provider(my_provider_registration)
+    .build();
+
+bus.publish_event(&tenant, "greentic.repo.build.status", json!({
+    "status": "succeeded",
+    "build_id": "b-123",
+}))
+.await?;
+
+let mut sub = bus
+    .subscribe_topic("greentic.repo.build.status", &tenant, SubscriptionOptions::default())
+    .await?;
+if let Some(evt) = sub.next().await {
+    assert_eq!(evt.topic, "greentic.repo.build.status");
+    assert_eq!(evt.payload["status"], "succeeded");
+}
+```
+`subscribe_topic` simply clones the provided tenant context for convenience; full `subscribe` remains available.
+
+### Topic conventions (recommendations, not enforced)
+- `greentic.repo.build.status`
+- `greentic.repo.publish.completed`
+- `greentic.repo.component.deprecated`
+- `greentic.repo.component.recalled`
+These stay string-based only; greentic-events does not ship typed repo event enums.
 
 ## Default providers (OCI)
 `greentic-events-providers` is published as an OCI artifact at `oci://ghcr.io/greentic-ai/greentic-events-providers:latest`. Pull it with your OCI client (for example, `oras pull ghcr.io/greentic-ai/greentic-events-providers:latest -o /tmp/greentic-events-providers`) and point the CLI or your host at that directory:
