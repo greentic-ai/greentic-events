@@ -207,6 +207,56 @@ fn build_envelope_is_generic_and_string_topic_only() {
 }
 
 #[tokio::test]
+async fn secrets_topics_accept_metadata_payloads() {
+    let provider = Arc::new(FakeProvider::new(
+        "secrets",
+        vec!["greentic.secrets.*".into()],
+        0,
+    ));
+    let bus = EventBusBuilder::new()
+        .register_provider(registration_from_provider(
+            Arc::clone(&provider),
+            RetryPolicy::default(),
+            None,
+        ))
+        .build();
+
+    let payload = json!({
+        "schema_version": "v1",
+        "key": "services/payments/api-key",
+        "scope": { "env": "prod", "tenant": "acme", "team": "payments" },
+        "tenant_ctx": { "environment": "prod", "tenant": "acme" },
+        "session_id": "sess-123",
+        "correlation_id": "flow-abc",
+        "pack_id": "billing-pack@1.2.3",
+        "result": "success",
+        "timestamp": "2024-12-18T12:34:56Z",
+        "metadata": { "issuer": "greentic-secrets-cli" }
+    });
+
+    let topics = [
+        "greentic.secrets.put",
+        "greentic.secrets.delete",
+        "greentic.secrets.rotate.requested",
+        "greentic.secrets.rotate.completed",
+        "greentic.secrets.missing.detected",
+    ];
+
+    for topic in topics.iter().copied() {
+        let event = build_envelope(tenant_ctx(), topic, payload.clone()).unwrap();
+        bus.publish(event).await.expect("publish");
+    }
+
+    let published = provider.published();
+    let published = published.lock().unwrap();
+    assert_eq!(published.len(), topics.len());
+    for (idx, evt) in published.iter().enumerate() {
+        assert_eq!(evt.topic, topics[idx]);
+        assert_eq!(evt.payload, payload);
+    }
+}
+
+#[tokio::test]
 async fn publish_retries_then_succeeds() {
     let provider = Arc::new(FakeProvider::new("retry", vec!["greentic.*".into()], 2));
     let retry = RetryPolicy {

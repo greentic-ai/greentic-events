@@ -1057,7 +1057,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-events"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1081,9 +1081,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-flow"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3ec9b2649ac3f95843b37b9fc74ae81978f91ecbdca4145b8aedfe7493e23d0"
+checksum = "f5eb8bb7016281eda36dafd4006f6ddc53a43a520a19317711ba83e43ef579be"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1105,9 +1105,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-interfaces"
-version = "0.4.55"
+version = "0.4.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9323311b289e4daf4d3cc48a22fb88a96733592c5fb60466515742afe61c1939"
+checksum = "937ef73030875993660a37419ea42496e6294af4ca309fa13263a0ed3267c387"
 dependencies = [
  "anyhow",
  "greentic-types",
@@ -1122,9 +1122,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-pack"
-version = "0.4.15"
+version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd78946cff9ed38a024fe26f3a7d2745690dbb986baa41203bf96568dbeb1b10"
+checksum = "9674e2f1be068d7283ed6acb28a2d293d47ce5782f83a7f5cce7c9e7d668a149"
 dependencies = [
  "anyhow",
  "base64",
@@ -1151,9 +1151,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-telemetry"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d35a51d9d673e634bd8eae5923d6e400df5c9c12253cb9031d921ea4e25f188b"
+checksum = "c467daab41db901f27deb70497fde3721d439241438ca56856daa5f422d4db48"
 dependencies = [
  "anyhow",
  "atty",
@@ -1174,10 +1174,11 @@ dependencies = [
 
 [[package]]
 name = "greentic-types"
-version = "0.4.14"
+version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0b5e26eaa4f5bdf4c0ee8690043a95382a9552b4e98513af0c491aeaa05f3fd"
+checksum = "76eb72861b2f6873e39424f07caffa39df037cbdba6b7004d53567c6003fdcc7"
 dependencies = [
+ "anyhow",
  "chrono",
  "ciborium",
  "fnv",
@@ -1199,9 +1200,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-types-macros"
-version = "0.4.14"
+version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e6ea6341eacef030d002f4839657c7b09eac74e0e1a4c5725e9e3c6c81d362"
+checksum = "71a1a215f9a62b0097a82f19cb07fde68ec0f0b87a6f06024c8e31ccd2395727"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1644,9 +1645,9 @@ checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
 name = "libz-rs-sys"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b484ba8d4f775eeca644c452a56650e544bf7e617f1d170fe7298122ead5222"
+checksum = "15413ef615ad868d4d65dce091cb233b229419c7c0c4bcaa746c0901c49ff39c"
 dependencies = [
  "zlib-rs",
 ]
@@ -2209,14 +2210,15 @@ dependencies = [
 
 [[package]]
 name = "rcgen"
-version = "0.14.5"
+version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fae430c6b28f1ad601274e78b7dffa0546de0b73b4cd32f46723c0c2a16f7a5"
+checksum = "3ec0a99f2de91c3cddc84b37e7db80e4d96b743e05607f647eb236fc0455907f"
 dependencies = [
  "pem",
  "ring",
  "rustls-pki-types",
  "time",
+ "x509-parser",
  "yasna",
 ]
 
@@ -2309,9 +2311,9 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "reqwest"
-version = "0.12.25"
+version = "0.12.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6eff9328d40131d43bd911d42d79eb6a47312002a4daefc9e37f17e74a7701a"
+checksum = "3b4c14b2d9afca6a60277086b0cc6a6ae0b568f6f7916c943a8cdc79f8be240f"
 dependencies = [
  "base64",
  "bytes",
@@ -3905,6 +3907,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "oid-registry",
+ "ring",
  "rusticata-macros",
  "thiserror",
  "time",
@@ -4038,9 +4041,9 @@ dependencies = [
 
 [[package]]
 name = "zlib-rs"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36134c44663532e6519d7a6dfdbbe06f6f8192bde8ae9ed076e9b213f0e31df7"
+checksum = "51f936044d677be1a1168fae1d03b583a285a5dd9d8cbf7b24c23aa1fc775235"
 
 [[package]]
 name = "zopfli"

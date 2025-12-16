@@ -44,11 +44,15 @@
 - **Path:** `src/main.rs`  
   **Role:** Minimal default binary entrypoint.  
   **Key functionality:** Prints “Hello, world!” (library functionality lives in `lib.rs` and the CLI binary).
-- **Path:** `tests/`  
-  **Role:** Integration/unit coverage for bus behavior, runner/WIT adapters, and CLI smoke.  
-  **Key functionality:** Exercises pack loading, retries/DLQ/idempotency, ACLs, metrics, spans, bridge adapters, runner clients, and CLI provider listing (fixtures under `tests/fixtures/packs`).
 - **Path:** `docs/runner-integration.md`  
   **Role:** Notes on wiring runner-hosted providers/bridges into the bus using the runner adapters.
+- **Path:** `docs/secrets-events.md`  
+  **Role:** Secrets topic conventions and example payloads (metadata-only, no secret values).
+- **Path:** `MIGRATION_STATUS.md`  
+  **Role:** Tracks secrets migration status for this repo (changes, breakages, downstream actions).
+- **Path:** `tests/`  
+  **Role:** Integration/unit coverage for bus behavior, runner/WIT adapters, and CLI smoke.  
+  **Key functionality:** Exercises pack loading, retries/DLQ/idempotency, ACLs, metrics, spans, bridge adapters, runner clients, secrets topic payload acceptance, and CLI provider listing (fixtures under `tests/fixtures/packs`).
 
 ## 3. Work In Progress, TODOs, and Stubs
 - None identified (no TODO/FIXME markers or unimplemented stubs found).

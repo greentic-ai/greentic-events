@@ -93,6 +93,8 @@ if let Some(evt) = sub.next().await {
 - `greentic.repo.component.recalled`
 These stay string-based only; greentic-events does not ship typed repo event enums.
 
+See `docs/secrets-events.md` for recommended secrets topic patterns and example payloads (redacted metadata only; no secret values).
+
 ## Default providers (OCI)
 `greentic-events-providers` is published as an OCI artifact at `oci://ghcr.io/greentic-ai/greentic-events-providers:latest`. Pull it with your OCI client (for example, `oras pull ghcr.io/greentic-ai/greentic-events-providers:latest -o /tmp/greentic-events-providers`) and point the CLI or your host at that directory:
 
