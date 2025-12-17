@@ -1,0 +1,23 @@
+[package]
+name = "greentic-events-runtime"
+version = "0.4.4"
+edition = "2024"
+license = "MIT"
+description = "Config-aware helpers for greentic-events (keeps core crate config-free)."
+publish = false
+
+[features]
+default = ["resolver"]
+resolver = ["greentic-config"]
+
+[dependencies]
+anyhow = "1"
+greentic-config-types = { workspace = true }
+greentic-config = { workspace = true, optional = true }
+greentic-events = { path = "../..", version = "0.4.4" }
+
+[dev-dependencies]
+greentic-types = "0.4"
+serde_json = "1"
+tempfile = "3"
+url = "2"

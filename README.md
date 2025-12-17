@@ -31,6 +31,8 @@ Optional overrides can be set in `pack.yaml` annotations:
 
 ## CLI
 - Inspect providers from a pack: `cargo run --bin greentic-events-cli -- --pack path/to/pack`
+- Override config for the invocation: `cargo run --bin greentic-events-cli -- --config /path/to/config.toml --pack ...`
+- Config introspection: `greentic-events-cli config show` or `greentic-events-cli config explain` (add `--json` for JSON output).
 - Helper script: `./scripts/inspect_pack.sh tests/fixtures/packs/events_fake`
 
 ## Usage

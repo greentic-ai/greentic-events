@@ -1,6 +1,14 @@
+[workspace]
+members = [".", "crates/greentic-events-runtime"]
+resolver = "2"
+
+[workspace.dependencies]
+greentic-config-types = "0.4.8"
+greentic-config = "0.4.8"
+
 [package]
 name = "greentic-events"
-version = "0.4.4"
+version = "0.4.5"
 edition = "2024"
 rust-version = "1.89"
 license = "MIT"
@@ -26,12 +34,16 @@ tokio-stream = "0.1"
 tracing = "0.1"
 clap = { version = "4", features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+greentic-config = { workspace = true }
+greentic-config-types = { workspace = true }
+toml = "0.9"
 
 [dev-dependencies]
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "time", "sync"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+tempfile = "3"
 
 [[bin]]
 name = "greentic-events-cli"
