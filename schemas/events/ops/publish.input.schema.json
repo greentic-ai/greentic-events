@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.greentic.dev/events/ops/publish.input.schema.json",
+  "title": "events.publish input",
+  "description": "Input contract for provider-core publish operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical topic or subject the provider should publish to."
+    },
+    "event": {
+      "allOf": [
+        {
+          "$ref": "../common/event_envelope.schema.json"
+        },
+        {
+          "type": "object",
+          "required": [
+            "payload"
+          ]
+        }
+      ],
+      "description": "Event envelope; providers may assign id/ts/type when absent."
+    },
+    "options": {
+      "type": "object",
+      "description": "Publish-time options controlling dedupe and delivery urgency.",
+      "additionalProperties": false,
+      "properties": {
+        "dedupe_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Idempotency key for de-duplication."
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Time-to-live hint in seconds."
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "topic",
+    "event"
+  ]
+}

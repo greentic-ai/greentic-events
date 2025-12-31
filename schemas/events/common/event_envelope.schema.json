@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.greentic.dev/events/common/event_envelope.schema.json",
+  "title": "Greentic Event Envelope",
+  "description": "Canonical event envelope shape aligned with greentic-types::EventEnvelope, kept transport-agnostic for provider-core operations.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "Stable event identifier; providers may assign when missing."
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical topic or subject (for example greentic.repo.build.status)."
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Event type identifier (for example order.created)."
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Originator of the event (URI, DID, or service name)."
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional subject tied to the event (for example repo:my-service)."
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp in UTC; alias for time."
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp in UTC."
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Correlation identifier for linking related events."
+    },
+    "payload": {
+      "$ref": "#/$defs/payload"
+    },
+    "meta": {
+      "$ref": "#/$defs/meta"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "String-only metadata such as idempotency keys.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "tenant": {
+      "$ref": "#/$defs/tenant"
+    }
+  },
+  "required": [
+    "payload"
+  ],
+  "$defs": {
+    "payload": {
+      "description": "Arbitrary JSON payload carried by the event.",
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "meta": {
+      "type": "object",
+      "description": "Lightweight metadata for routing and triage.",
+      "properties": {
+        "tenant": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tenant": {
+      "type": "object",
+      "description": "Optional tenant context snapshot; aligns with greentic-types::TenantCtx.",
+      "properties": {
+        "env": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tenant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "team": {
+          "type": "string",
+          "minLength": 1
+        },
+        "team_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "user": {
+          "type": "string",
+          "minLength": 1
+        },
+        "user_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flow_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "deadline": {
+          "type": "object",
+          "properties": {
+            "unix_millis": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "unix_millis"
+          ],
+          "additionalProperties": false
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "impersonation": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "env",
+        "tenant",
+        "tenant_id",
+        "attempt"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

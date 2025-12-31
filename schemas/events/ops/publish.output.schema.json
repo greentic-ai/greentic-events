@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.greentic.dev/events/ops/publish.output.schema.json",
+  "title": "events.publish output",
+  "description": "Output contract for provider-core publish operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable receipt identifier returned by the provider."
+    },
+    "provider_event_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Provider-native event identifier when available."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "queued"
+      ]
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp of publish acceptance."
+    }
+  },
+  "required": [
+    "receipt_id",
+    "status"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.greentic.dev/events/ops/subscribe.output.schema.json",
+  "title": "events.subscribe output (scaffold)",
+  "description": "Placeholder contract for subscribe; finalized semantics to be added in a follow-up PR.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "subscription_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

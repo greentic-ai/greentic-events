@@ -1,0 +1,25 @@
+{
+  "topic": "orders.created",
+  "event": {
+    "id": "evt-12345",
+    "ts": "2024-01-02T03:04:05Z",
+    "type": "order.created",
+    "payload": {
+      "order_id": "ord-1",
+      "total": 25.5
+    },
+    "meta": {
+      "tenant": "tenant-a",
+      "tags": [
+        "orders",
+        "created"
+      ],
+      "region": "us-east-1"
+    }
+  },
+  "options": {
+    "dedupe_key": "order-ord-1",
+    "ttl_seconds": 3600,
+    "priority": "normal"
+  }
+}

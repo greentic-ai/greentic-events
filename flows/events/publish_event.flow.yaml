@@ -1,0 +1,41 @@
+schema_version: flow-v1
+id: events_publish_event
+kind: event
+description: "Template: publish an event via provider-core without binding to a specific transport."
+entrypoints:
+  default: {}
+nodes:
+  publish:
+    id: publish
+    component:
+      id: greentic.provider.invoke
+      operation: publish
+    input:
+      mapping:
+        # Provider selection is runtime-driven (state/config/UI); no transport is baked in.
+        provider_id: "{{ state.provider_id }}"
+        provider_type: "{{ state.provider_type | default: 'events.webhook' }}"
+        # ProviderInvoke convention: `request` is passed to the provider op as JSON.
+        request:
+          topic: "{{ payload.topic }}"
+          event:
+            id: "{{ payload.event_id | default: '' }}"
+            type: "{{ payload.event_type | default: 'greentic.events.generic' }}"
+            ts: "{{ payload.event_ts | default: now_rfc3339 }}"
+            payload: "{{ payload.event_payload }}"
+            meta:
+              tenant: "{{ tenant.tenant }}"
+              tags: "{{ payload.tags }}"
+            metadata:
+              idempotency_key: "{{ payload.dedupe_key }}"
+          options:
+            dedupe_key: "{{ payload.dedupe_key }}"
+            ttl_seconds: "{{ payload.ttl_seconds }}"
+            priority: "{{ payload.priority }}"
+    output:
+      mapping:
+        state.last_receipt_id: "{{ output.receipt_id }}"
+        state.last_provider_event_id: "{{ output.provider_event_id }}"
+        payload.publish_result: "{{ output }}"
+    routing:
+      end: {}

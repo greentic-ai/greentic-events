@@ -132,6 +132,7 @@ mod tests {
                     url: Url::parse("https://events.greentic.test").unwrap(),
                     headers: None,
                 }),
+                ..Default::default()
             }),
             events: Some(EventsConfig {
                 reconnect: Some(ReconnectConfig {
