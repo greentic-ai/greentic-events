@@ -1,0 +1,35 @@
+pack_id: validators.events
+version: 0.1.0
+kind: library
+publisher: Greentic
+
+authors:
+  - "greentic-ai"
+
+description: "Events domain validator component pack."
+
+components:
+  - id: "greentic.events.pack-validator"
+    version: "0.1.0"
+    world: "greentic:pack-validate/pack-validator@0.1.0"
+    supports: []
+    profiles:
+      default: "stateless"
+      supported:
+        - "stateless"
+    capabilities:
+      wasi: {}
+      host: {}
+    wasm: "components/greentic-events-pack-validator.wasm"
+
+flows:
+  - id: validate
+    file: flows/validate.ygtc
+    tags: [default]
+    entrypoints: [default]
+
+assets: []
+
+dependencies: []
+
+extensions: {}

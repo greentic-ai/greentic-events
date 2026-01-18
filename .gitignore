@@ -1,1 +1,3 @@
 /target
+/validators/events/components/*.wasm
+/validators/events/dist/*.gtpack

@@ -11,6 +11,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     env:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
@@ -18,6 +21,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.89.0
+          targets: wasm32-wasip2
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -31,6 +35,22 @@ jobs:
         env:
           CLI_SMOKE: 1
         run: ci/local_check.sh
+      - name: Build events validator pack
+        run: |
+          cargo install greentic-pack --version 0.4.58 --locked
+          scripts/build_validators_pack.sh
+      - name: Publish events validator pack to GHCR
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: oras-project/setup-oras@v1
+      - name: Push validator pack
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(grep '^version:' validators/events/pack.yaml | head -n1 | awk '{print $2}' | tr -d '"')
+          oras login ghcr.io -u "${GITHUB_ACTOR}" -p "${GHCR_TOKEN}"
+          oras push ghcr.io/greentic-ai/validators/events:${VERSION} \
+            validators/events/dist/validators-events.gtpack:application/octet-stream
       - name: Publish crates
         run: |
           cargo publish -p greentic-events --all-features

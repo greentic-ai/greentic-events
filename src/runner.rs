@@ -363,7 +363,9 @@ fn from_wit_message(msg: WitChannelMessageEnvelope) -> ChannelMessageEnvelope {
         tenant: msg.tenant,
         channel: msg.channel,
         session_id: msg.session_id,
+        reply_scope: None,
         user_id: msg.user_id,
+        correlation_id: None,
         text: msg.text,
         attachments: msg
             .attachments

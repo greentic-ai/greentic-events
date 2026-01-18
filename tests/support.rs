@@ -199,7 +199,9 @@ impl EventToMessageBridge for FakeEventToMessageBridge {
             tenant: event.tenant.clone(),
             channel: event.topic.clone(),
             session_id: event.subject.clone().unwrap_or_else(|| "session".into()),
+            reply_scope: None,
             user_id: None,
+            correlation_id: None,
             text: Some(event.payload.to_string()),
             attachments: vec![Attachment {
                 mime_type: "application/json".into(),
