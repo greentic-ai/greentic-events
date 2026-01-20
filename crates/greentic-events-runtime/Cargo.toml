@@ -12,12 +12,20 @@ resolver = ["greentic-config"]
 
 [dependencies]
 anyhow = "1"
+async-trait = "0.1"
+futures = "0.3"
 greentic-config-types = { workspace = true }
 greentic-config = { workspace = true, optional = true }
 greentic-events = { path = "../..", version = "0.4.4" }
+greentic-pack = { package = "greentic-pack-lib", version = "0.4" }
+greentic-types = { version = "0.4.39", features = ["serde", "time"] }
+serde_json = "1"
+tracing = "0.1"
 
 [dev-dependencies]
-greentic-types = "0.4"
 serde_json = "1"
 tempfile = "3"
 url = "2"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "time", "sync"] }
+time = { version = "0.3", features = ["std"] }

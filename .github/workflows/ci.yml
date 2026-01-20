@@ -26,3 +26,24 @@ jobs:
         env:
           CLI_SMOKE: 1
         run: ci/local_check.sh
+  e2e:
+    if: ${{ vars.RUN_E2E_PACKS == '1' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.89.0
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: Build e2e pack fixtures
+        run: cargo run --quiet --bin greentic-events-fixture -- --out tests/fixtures/packs
+      - name: Run e2e conformance
+        run: cargo run --quiet --bin greentic-events-test -- e2e --packs tests/fixtures/packs --dry-run

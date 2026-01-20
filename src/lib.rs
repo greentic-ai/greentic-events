@@ -4,6 +4,7 @@ pub mod acl;
 pub mod backoff;
 pub mod bridge;
 pub mod bus;
+pub mod e2e;
 pub mod error;
 pub mod idempotency;
 pub mod metrics;

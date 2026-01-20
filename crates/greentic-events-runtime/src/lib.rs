@@ -5,6 +5,8 @@ use greentic_config_types::{
 use greentic_events::backoff::{BackoffStrategy, RetryPolicy};
 use std::time::Duration;
 
+pub mod install;
+
 /// Runtime-facing view of event settings derived from `GreenticConfig`.
 /// Keeps the core `greentic-events` crate free from config-loader concerns.
 #[derive(Clone, Debug, PartialEq)]
